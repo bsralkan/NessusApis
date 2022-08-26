@@ -1,6 +1,7 @@
 ﻿using NessusApis;
 using Newtonsoft.Json.Linq;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -75,7 +76,15 @@ namespace ConsoleApp4
                 data = await httpClient.GetAsync(url);
                 content = data.Content;
                 response = await content.ReadAsStringAsync();
-                Console.WriteLine(response);
+
+                //string docPath = AppDomain.CurrentDomain.BaseDirectory;
+                string projectDirectory = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
+                Console.WriteLine(Path.Combine(projectDirectory, "WriteTextAsync.txt"));
+
+                using (StreamWriter outputFile = new StreamWriter(Path.Combine(projectDirectory, "WriteTextAsync.txt")))
+                {
+                    await outputFile.WriteAsync(response);
+                }
             } 
             catch (Exception e)
             {
