@@ -14,7 +14,6 @@ namespace NessusApis
 {
     class Program
     {
-        string aa;
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static HttpClient httpClient;
         private static JObject json_object;
