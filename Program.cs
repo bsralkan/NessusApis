@@ -110,6 +110,6 @@ namespace NessusApis
                 
                 return e.Message;
             }
-}
+        }
     }
 }
