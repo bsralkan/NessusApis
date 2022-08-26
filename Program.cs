@@ -1,8 +1,11 @@
-﻿using NessusApis;
+﻿using log4net;
+using log4net.Config;
+using NessusApis;
 using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -11,6 +14,7 @@ namespace ConsoleApp4
 {
     class Program
     {
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         static async Task Main(string[] args)
         {
             try {
@@ -18,6 +22,9 @@ namespace ConsoleApp4
                 string response;
                 StringContent stringContent;
                 string json;
+
+                var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+                XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
 
                 //Blocked SSL errors
                 HttpClientHandler clientHandler = new HttpClientHandler();
