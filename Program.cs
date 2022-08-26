@@ -54,6 +54,27 @@ namespace ConsoleApp4
                 data = await httpClient.GetAsync("scans");
                 content = data.Content;
                 response = await content.ReadAsStringAsync();
+                json_object = JObject.Parse(response);
+
+                string scanId = (string)json_object["scans"][0]["id"];
+                url = "scans/" + scanId + "/export";
+                json = "{\"format\":\"nessus\"}";
+
+                httpClient.DefaultRequestHeaders.Add("ScanID", scanId);
+                stringContent = new StringContent(json, Encoding.UTF8, "application/json");
+                data = await httpClient.PostAsync(url, stringContent);
+                content = data.Content;
+                response = await content.ReadAsStringAsync();
+                json_object = JObject.Parse(response);
+                string fileId = (string)json_object["file"];
+
+                System.Threading.Thread.Sleep(10000);
+
+                httpClient.DefaultRequestHeaders.Add("FileID", fileId);
+                url += "/" + fileId + "/download";
+                data = await httpClient.GetAsync(url);
+                content = data.Content;
+                response = await content.ReadAsStringAsync();
                 Console.WriteLine(response);
             } 
             catch (Exception e)
