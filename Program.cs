@@ -41,21 +41,14 @@ namespace ConsoleApp4
 
                 httpClient.BaseAddress = new Uri(url);
 
-                data = await httpClient.PostAsync("session", stringContent);
-                content = data.Content;
-                response = await content.ReadAsStringAsync();
+                json_object = JObject.Parse(await post(httpClient, "session", stringContent));
 
-                json_object = JObject.Parse(response);
 
                 httpClient.DefaultRequestHeaders.Add("X-Cookie", "token=" + json_object["token"]);
                 httpClient.DefaultRequestHeaders.Add("username", username);
                 httpClient.DefaultRequestHeaders.Add("password", password);
-                Console.WriteLine(httpClient.DefaultRequestHeaders);
 
-                data = await httpClient.GetAsync("scans");
-                content = data.Content;
-                response = await content.ReadAsStringAsync();
-                json_object = JObject.Parse(response);
+                json_object = JObject.Parse(await get(httpClient, "scans"));
 
                 string scanId = (string)json_object["scans"][0]["id"];
                 url = "scans/" + scanId + "/export";
@@ -63,23 +56,17 @@ namespace ConsoleApp4
 
                 httpClient.DefaultRequestHeaders.Add("ScanID", scanId);
                 stringContent = new StringContent(json, Encoding.UTF8, "application/json");
-                data = await httpClient.PostAsync(url, stringContent);
-                content = data.Content;
-                response = await content.ReadAsStringAsync();
-                json_object = JObject.Parse(response);
+                
+                json_object = JObject.Parse(await post(httpClient, url, stringContent));
                 string fileId = (string)json_object["file"];
 
                 System.Threading.Thread.Sleep(10000);
 
                 httpClient.DefaultRequestHeaders.Add("FileID", fileId);
                 url += "/" + fileId + "/download";
-                data = await httpClient.GetAsync(url);
-                content = data.Content;
-                response = await content.ReadAsStringAsync();
+                response = await get(httpClient, url);
 
-                //string docPath = AppDomain.CurrentDomain.BaseDirectory;
                 string projectDirectory = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
-                Console.WriteLine(Path.Combine(projectDirectory, "WriteTextAsync.txt"));
 
                 using (StreamWriter outputFile = new StreamWriter(Path.Combine(projectDirectory, "WriteTextAsync.txt")))
                 {
@@ -90,6 +77,21 @@ namespace ConsoleApp4
             {
                 Console.WriteLine(e.Message);
             }
+        }
+
+        static async Task<string> get(HttpClient httpClient, string url)
+        {
+            var data = await httpClient.GetAsync(url);
+            var content = data.Content;
+            var response = await content.ReadAsStringAsync();
+            return response;
+        }
+        static async Task<string> post(HttpClient httpClient, string url, StringContent strContent)
+        {
+            var data = await httpClient.PostAsync(url, strContent);
+            var content = data.Content;
+            var response = await content.ReadAsStringAsync();
+            return response;
         }
     }
 }
