@@ -17,6 +17,8 @@ namespace ConsoleApp4
                 HttpContent content;
                 JObject json_object;
                 string response;
+                StringContent stringContent;
+                string json;
 
                 //Blocked SSL errors
                 HttpClientHandler clientHandler = new HttpClientHandler();
@@ -33,8 +35,8 @@ namespace ConsoleApp4
 
                 UserInfo userInfo = new UserInfo(username, password);
 
-                var json = JsonSerializer.Serialize(userInfo);
-                var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
+                json = JsonSerializer.Serialize(userInfo);
+                stringContent = new StringContent(json, Encoding.UTF8, "application/json");
 
                 httpClient.BaseAddress = new Uri(url);
 
