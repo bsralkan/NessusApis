@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace NessusApis
 {
@@ -18,7 +19,7 @@ namespace NessusApis
         private static JObject json_object;
         private static StringContent stringContent;
         private static UserInfo userInfo;
-        private static string response, json, url, username, password;
+        private static string response, json, url, username, password, scanId, fileId;
         static async Task Main(string[] args)
         {
             try {                
@@ -42,74 +43,154 @@ namespace NessusApis
 
                 userInfo = new UserInfo(username, password);
 
+                var res = await addToken();
+                res = await addScanId();
+                res = await addFileId();
+
+                // waiting for creating file
+                System.Threading.Thread.Sleep(10000);
+
+                res = await getFile();
+                res = await writeFile();
+
+            } 
+            catch (Exception e)
+            {
+                log.Error("Program.cs Main function : " + e.Message);
+                Environment.Exit(-1);
+            }
+        }
+
+        static async Task<string> addToken()
+        {
+            try {
                 json = JsonSerializer.Serialize(userInfo);
                 stringContent = new StringContent(json, Encoding.UTF8, "application/json");
 
                 httpClient.BaseAddress = new Uri(url);
 
-                json_object = JObject.Parse(await post(httpClient, "session", stringContent));
-
+                json_object = JObject.Parse(await post("session"));
                 httpClient.DefaultRequestHeaders.Add("X-Cookie", "token=" + json_object["token"]);
                 httpClient.DefaultRequestHeaders.Add("username", username);
                 httpClient.DefaultRequestHeaders.Add("password", password);
+                return "success";
+            }
+            catch (Exception e)
+            {
+                log.Error("Program.cs addToken function : " + e.Message);
+                throw new Exception();
+            }
+        }
 
-                json_object = JObject.Parse(await get(httpClient, "scans"));
+        static async Task<string> addScanId()
+        {
+            try {
+                json_object = JObject.Parse(await get("scans"));
 
-                string scanId = (string)json_object["scans"][0]["id"];
-                url = "scans/" + scanId + "/export";
-                json = "{\"format\":\"nessus\"}";
-
+                scanId = (string)json_object["scans"][0]["id"];
                 httpClient.DefaultRequestHeaders.Add("ScanID", scanId);
+
+                return "success";
+            }
+            catch (Exception e)
+            {
+                log.Error("Program.cs addScanId function : " + e.Message);
+                throw new Exception();
+            }
+        }
+
+        static async Task<string> addFileId()
+        {
+            try {
+                json = "{\"format\":\"nessus\"}";
+                url = "scans/" + scanId + "/export";
                 stringContent = new StringContent(json, Encoding.UTF8, "application/json");
-                
-                json_object = JObject.Parse(await post(httpClient, url, stringContent));
-                string fileId = (string)json_object["file"];
 
-                System.Threading.Thread.Sleep(10000);
-
+                json_object = JObject.Parse(await post(url));
+                fileId = (string)json_object["file"];
                 httpClient.DefaultRequestHeaders.Add("FileID", fileId);
+
+                return "success";
+            }
+            catch (Exception e)
+            {
+                log.Error("Program.cs addFileId function : " + e.Message);
+                throw new Exception();
+            }
+        }
+
+        static async Task<string> getFile()
+        {
+            try {
+
                 url += "/" + fileId + "/download";
-                response = await get(httpClient, url);
+                response = await get(url);
+
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(response);
+                response = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
+
+                return "success";
+            }
+            catch (Exception e)
+            {
+                log.Error("Program.cs getFile function : " + e.Message);
+                throw new Exception();
+            }
+        }
+
+        static async Task<string> writeFile()
+        {
+            try {
 
                 string projectDirectory = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
 
-                using (StreamWriter outputFile = new StreamWriter(Path.Combine(projectDirectory, "WriteTextAsync.txt")))
+                using (StreamWriter outputFile = new StreamWriter(Path.Combine(projectDirectory, "WriteTextAsync.json")))
                 {
                     await outputFile.WriteAsync(response);
                 }
-            } 
+
+                return "success";
+            }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                log.Error("Program.cs writeFile function : " + e.Message);
+                throw new Exception();
             }
         }
 
-        static async Task<string> get(HttpClient httpClient, string url)
+        static async Task<string> get(string url)
         {
-            try {
-                
+            try {                
                 var data = await httpClient.GetAsync(url);
+                if (data.StatusCode == System.Net.HttpStatusCode.NotFound || data.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    throw new Exception();
+                }
                 var content = data.Content;
-                var response = await content.ReadAsStringAsync();
-                return response;            
+                return await content.ReadAsStringAsync();  
             }
             catch(Exception e)
             {
-                return e.Message;
+                log.Error("Program.cs get function : " + e.Message);
+                throw new Exception();
             }
         }
-        static async Task<string> post(HttpClient httpClient, string url, StringContent strContent)
+        static async Task<string> post(string url)
         {
             try {
-                var data = await httpClient.PostAsync(url, strContent);
+                var data = await httpClient.PostAsync(url, stringContent);
+                if(data.StatusCode == System.Net.HttpStatusCode.NotFound || data.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    throw new Exception();
+                }
                 var content = data.Content;
-                var response = await content.ReadAsStringAsync();
-                return response;
+                return await content.ReadAsStringAsync();
             }
             catch(Exception e)
             {
-                
-                return e.Message;
+                log.Error("Program.cs post function : " + e.Message);
+                throw new Exception();
             }
         }
 
