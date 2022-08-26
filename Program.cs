@@ -79,17 +79,31 @@ namespace ConsoleApp4
 
         static async Task<string> get(HttpClient httpClient, string url)
         {
-            var data = await httpClient.GetAsync(url);
-            var content = data.Content;
-            var response = await content.ReadAsStringAsync();
-            return response;
+            try {
+                
+                var data = await httpClient.GetAsync(url);
+                var content = data.Content;
+                var response = await content.ReadAsStringAsync();
+                return response;            
+            }
+            catch(Exception e)
+            {
+                return e.Message;
+            }
         }
         static async Task<string> post(HttpClient httpClient, string url, StringContent strContent)
         {
-            var data = await httpClient.PostAsync(url, strContent);
-            var content = data.Content;
-            var response = await content.ReadAsStringAsync();
-            return response;
-        }
+            try {
+                var data = await httpClient.PostAsync(url, strContent);
+                var content = data.Content;
+                var response = await content.ReadAsStringAsync();
+                return response;
+            }
+            catch(Exception e)
+            {
+                
+                return e.Message;
+            }
+}
     }
 }
