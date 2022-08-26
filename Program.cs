@@ -14,8 +14,6 @@ namespace ConsoleApp4
         static async Task Main(string[] args)
         {
             try {
-                HttpResponseMessage data;
-                HttpContent content;
                 JObject json_object;
                 string response;
                 StringContent stringContent;
