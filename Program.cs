@@ -14,14 +14,16 @@ namespace NessusApis
     class Program
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static HttpClient httpClient;
+        private static JObject json_object;
+        private static StringContent stringContent;
+        private static UserInfo userInfo;
+        private static string response, json, url, username, password;
         static async Task Main(string[] args)
         {
-            try {
-                JObject json_object;
-                string response;
-                StringContent stringContent;
-                string json;
+            try {                
 
+                //log4net
                 var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
                 XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
 
@@ -29,16 +31,16 @@ namespace NessusApis
                 HttpClientHandler clientHandler = new HttpClientHandler();
                 clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
 
-                var httpClient = new HttpClient(clientHandler);
+                httpClient = new HttpClient(clientHandler);
 
                 Console.WriteLine("Please enter Nessus api URL: ");
-                var url = Console.ReadLine();
+                url = Console.ReadLine();
                 Console.WriteLine("Please enter Nessus username: ");
-                var username = Console.ReadLine();
+                username = Console.ReadLine();
                 Console.WriteLine("Please enter Nessus password: ");
-                var password = Console.ReadLine();
+                password = Console.ReadLine();
 
-                UserInfo userInfo = new UserInfo(username, password);
+                userInfo = new UserInfo(username, password);
 
                 json = JsonSerializer.Serialize(userInfo);
                 stringContent = new StringContent(json, Encoding.UTF8, "application/json");
@@ -46,7 +48,6 @@ namespace NessusApis
                 httpClient.BaseAddress = new Uri(url);
 
                 json_object = JObject.Parse(await post(httpClient, "session", stringContent));
-
 
                 httpClient.DefaultRequestHeaders.Add("X-Cookie", "token=" + json_object["token"]);
                 httpClient.DefaultRequestHeaders.Add("username", username);
@@ -111,5 +112,6 @@ namespace NessusApis
                 return e.Message;
             }
         }
+
     }
 }
