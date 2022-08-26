@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NessusApis;
+using System;
 using System.Net.Http;
 
 namespace ConsoleApp4
@@ -12,6 +13,15 @@ namespace ConsoleApp4
             clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
 
             var httpClient = new HttpClient(clientHandler);
+
+            Console.WriteLine("Please enter Nessus api URL: ");
+            var url = Console.ReadLine();
+            Console.WriteLine("Please enter Nessus username: ");
+            var username = Console.ReadLine();
+            Console.WriteLine("Please enter Nessus password: ");
+            var password = Console.ReadLine();
+
+            UserInfo userInfo = new UserInfo(username, password);
         }
     }
 }
